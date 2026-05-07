@@ -1,1 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Spin The Galaxy</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --space: #05030f;
+    --deep: #0d0828;
+    --nebula1: #7c3aed;
+    --nebula2: #06b6d4;
+    --nebula3: #f472b6;
+    --gold: #fbbf24;
+    --text: #e2d9f3;
+    --dim: #7c6fa0;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--space);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ── STARFIELD ── */
+  #stars {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 45%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 40% 10%, rgba(255,255,255,0.8) 0%, transparent 100%),
+      radial-gradient(1px 1px at 55% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(2px 2px at 80% 55%, rgba(255,255,255,0.9) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 80%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 33% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 60% 90%, rgba(255,255,255,0.7) 0%, transparent 100%),
+      radial-gradient(1px 1px at 75% 12%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 88% 40%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(2px 2px at 50% 35%, rgba(200,180,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 20% 72%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 95% 20%, rgba(255,255,255,0.7) 0%, transparent 100%);
+  }
+
+  /* nebula glow bg */
+  body::before {
+    content:'';
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 30%, rgba(124,58,237,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 35% at 80% 70%, rgba(6,182,212,0.13) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 60% 10%, rgba(244,114,182,0.1) 0%, transparent 70%);
+    pointer-events:none;
+  }
+
+  .app {
+    position: relative; z-index: 1;
+    max-width: 480px; margin: 0 auto;
+    padding: 20px 16px 40px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+
+  /* ── HEADER ── */
+  .header { text-align: center; padding-top: 8px; }
+  .header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem; font-weight: 900;
+    letter-spacing: 0.08em;
+    background: linear-gradient(135deg, var(--nebula2), var(--nebula1), var(--nebula3));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 20px rgba(124,58,237,0.5));
+  }
+  .header p { color: var(--dim); font-size: 0.82rem; margin-top: 4px; letter-spacing: 0.05em; }
+
+  /* ── BOTTLE ARENA ── */
+  .arena {
+    position: relative;
+    width: 100%; aspect-ratio: 1;
+    max-width: 300px; align-self: center;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .orbit-ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(124,58,237,0.25);
+    animation: pulse-ring 3s ease-in-out infinite;
+  }
+  .orbit-ring:nth-child(2) {
+    inset: 12px;
+    border-color: rgba(6,182,212,0.15);
+    animation-delay: 1s;
+  }
+  @keyframes pulse-ring {
+    0%,100% { opacity:0.4; transform: scale(1); }
+    50% { opacity:1; transform: scale(1.02); }
+  }
+
+  /* player dots around circle */
+  .player-dot {
+    position: absolute;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(13,8,40,0.9);
+    border: 2px solid var(--nebula1);
+    display: flex; align-items:center; justify-content:center;
+    font-size: 0.62rem; font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    line-height: 1.1;
+    cursor: default;
+    transition: all 0.3s;
+    overflow: hidden;
+    word-break: break-word;
+    padding: 2px;
+    box-shadow: 0 0 10px rgba(124,58,237,0.3);
+  }
+  .player-dot.highlighted {
+    border-color: var(--gold);
+    background: rgba(251,191,36,0.15);
+    box-shadow: 0 0 20px rgba(251,191,36,0.6), 0 0 40px rgba(251,191,36,0.3);
+    transform: scale(1.2);
+    color: var(--gold);
+    z-index: 5;
+  }
+
+  /* ── BOTTLE SVG ── */
+  #bottle-wrap {
+    position: relative; z-index: 2;
+    width: 80px; height: 80px;
+    display: flex; align-items:center; justify-content:center;
+    cursor: pointer;
+    filter: drop-shadow(0 0 12px rgba(124,58,237,0.6));
+    transition: filter 0.3s;
+  }
+  #bottle-wrap:active { filter: drop-shadow(0 0 20px rgba(244,114,182,0.8)); }
+  #bottle-wrap svg { width: 70px; height: 70px; }
+
+  #bottle-wrap.spinning {
+    animation: spin-bottle var(--spin-duration, 3s) cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  }
+  @keyframes spin-bottle {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(var(--spin-angle, 1440deg)); }
+  }
+
+  .spin-hint {
+    position: absolute; bottom: -28px;
+    font-size: 0.7rem; color: var(--dim); letter-spacing: 0.05em;
+    font-family: 'Orbitron', monospace;
+    text-align: center; width: 100%;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: rgba(13,8,40,0.8);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 16px;
+    padding: 16px;
+    backdrop-filter: blur(12px);
+  }
+
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: var(--nebula2);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ── PLAYERS LIST ── */
+  .players-grid {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    min-height: 36px;
+  }
+  .player-tag {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 20px;
+    padding: 5px 10px 5px 8px;
+    font-size: 0.78rem; color: var(--text);
+    display: flex; align-items: center; gap: 6px;
+    animation: pop-in 0.2s ease;
+  }
+  @keyframes pop-in {
+    from { transform: scale(0.8); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .player-tag .remove-btn {
+    background: none; border: none;
+    color: var(--dim); cursor: pointer;
+    font-size: 0.9rem; line-height: 1;
+    padding: 0; transition: color 0.2s;
+  }
+  .player-tag .remove-btn:hover { color: var(--nebula3); }
+
+  .no-players { color: var(--dim); font-size: 0.82rem; font-style: italic; }
+
+  /* ── INPUT ROW ── */
+  .input-row {
+    display: flex; gap: 8px; margin-top: 12px;
+  }
+  .input-row input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-row input::placeholder { color: var(--dim); }
+  .input-row input:focus {
+    border-color: var(--nebula1);
+    box-shadow: 0 0 12px rgba(124,58,237,0.3);
+  }
+  .btn-add {
+    background: linear-gradient(135deg, var(--nebula1), var(--nebula2));
+    border: none; border-radius: 10px;
+    padding: 10px 16px;
+    color: #fff; font-family: 'Orbitron', monospace;
+    font-size: 0.75rem; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.05em;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn-add:active { opacity: 0.8; transform: scale(0.96); }
+
+  /* ── SPIN BUTTON ── */
+  .btn-spin {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--nebula1) 0%, #4f46e5 50%, var(--nebula2) 100%);
+    border: none; border-radius: 14px;
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem; font-weight: 900;
+    letter-spacing: 0.1em;
+    color: #fff;
+    cursor: pointer;
+    position: relative; overflow: hidden;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 24px rgba(124,58,237,0.4);
+  }
+  .btn-spin::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+  }
+  .btn-spin:hover::after { transform: translateX(100%); }
+  .btn-spin:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-spin:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ── RESULT PANEL ── */
+  #result-panel {
+    display: none;
+    border: 1px solid rgba(251,191,36,0.4);
+    background: rgba(13,8,40,0.95);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    animation: slide-up 0.4s ease;
+    box-shadow: 0 0 30px rgba(251,191,36,0.15);
+  }
+  @keyframes slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  #result-panel.visible { display: block; }
+
+  .result-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem; font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(251,191,36,0.5);
+    margin-bottom: 4px;
+  }
+  .result-sub { color: var(--dim); font-size: 0.8rem; margin-bottom: 16px; }
+
+  .choice-btns {
+    display: flex; gap: 10px;
+  }
+  .btn-choice {
+    flex: 1; padding: 12px 8px;
+    border: none; border-radius: 12px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .btn-truth {
+    background: linear-gradient(135deg, #1d4ed8, #06b6d4);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(6,182,212,0.3);
+  }
+  .btn-dare {
+    background: linear-gradient(135deg, #be123c, #f472b6);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(244,114,182,0.3);
+  }
+  .btn-choice:active { transform: scale(0.95); }
+
+  /* ── CHALLENGE BOX ── */
+  #challenge-box {
+    display: none;
+    margin-top: 14px;
+    padding: 14px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: fade-in 0.3s ease;
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  #challenge-box.visible { display: block; }
+  #challenge-type {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem; letter-spacing: 0.12em;
+    margin-bottom: 8px;
+  }
+  #challenge-type.truth { color: var(--nebula2); }
+  #challenge-type.dare  { color: var(--nebula3); }
+  #challenge-text {
+    font-size: 0.95rem; line-height: 1.5;
+    color: var(--text);
+  }
+
+  .btn-again {
+    width: 100%; margin-top: 14px;
+    padding: 11px;
+    background: transparent;
+    border: 1px solid rgba(124,58,237,0.5);
+    border-radius: 10px;
+    color: var(--nebula1);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.72rem; letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-again:hover { background: rgba(124,58,237,0.12); color: var(--text); }
+
+  /* ── SHOOTING STAR EFFECT ── */
+  .shooting-star {
+    position: fixed; pointer-events: none; z-index: 0;
+    width: 2px; height: 80px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.8));
+    border-radius: 1px;
+    animation: shoot 1s ease-out forwards;
+  }
+  @keyframes shoot {
+    0%   { transform: translateY(0) translateX(0) rotate(var(--angle)); opacity:1; }
+    100% { transform: translateY(200px) translateX(200px) rotate(var(--angle)); opacity:0; }
+  }
+</style>
+</head>
+<body>
+<div id="stars"></div>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>🌌 SPIN THE GALAXY</h1>
+    <p>TRUTH · DARE · COSMOS</p>
+  </div>
+
+  <!-- BOTTLE ARENA -->
+  <div class="arena" id="arena">
+    <div class="orbit-ring"></div>
+    <div class="orbit-ring"></div>
+
+    <div id="bottle-wrap" onclick="triggerSpin()" title="Tap to spin">
+      <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- bottle body -->
+        <ellipse cx="40" cy="52" rx="14" ry="18" fill="url(#bottleGrad)" opacity="0.95"/>
+        <!-- bottle neck -->
+        <rect x="35" y="24" width="10" height="18" rx="4" fill="url(#bottleGrad)" opacity="0.95"/>
+        <!-- bottle cap -->
+        <rect x="33" y="18" width="14" height="8" rx="3" fill="url(#capGrad)"/>
+        <!-- shine -->
+        <ellipse cx="34" cy="46" rx="3" ry="9" fill="rgba(255,255,255,0.25)" transform="rotate(-15 34 46)"/>
+        <!-- glow arrow -->
+        <polygon points="40,4 44,14 40,12 36,14" fill="url(#arrowGrad)" filter="url(#glow)"/>
+        <defs>
+          <linearGradient id="bottleGrad" x1="26" y1="20" x2="54" y2="70" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#a78bfa"/>
+            <stop offset="100%" stop-color="#6d28d9"/>
+          </linearGradient>
+          <linearGradient id="capGrad" x1="33" y1="18" x2="47" y2="26" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#f472b6"/>
+            <stop offset="100%" stop-color="#be185d"/>
+          </linearGradient>
+          <linearGradient id="arrowGrad" x1="36" y1="4" x2="44" y2="14" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#fbbf24"/>
+            <stop offset="100%" stop-color="#f97316"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+      </svg>
+      <div class="spin-hint">TAP TO SPIN</div>
+    </div>
+  </div>
+
+  <!-- PLAYERS CARD -->
+  <div class="card">
+    <div class="card-title">🪐 Players</div>
+    <div class="players-grid" id="players-grid">
+      <span class="no-players">Add at least 2 players to start</span>
+    </div>
+    <div class="input-row">
+      <input id="player-input" type="text" placeholder="Enter player name..." maxlength="16"
+        onkeydown="if(event.key==='Enter') addPlayer()"/>
+      <button class="btn-add" onclick="addPlayer()">+ ADD</button>
+    </div>
+  </div>
+
+  <!-- SPIN BUTTON -->
+  <button class="btn-spin" id="spin-btn" onclick="triggerSpin()" disabled>
+    🌀 SPIN THE GALAXY
+  </button>
+
+  <!-- RESULT PANEL -->
+  <div id="result-panel">
+    <div class="result-name" id="result-name"></div>
+    <div class="result-sub">the galaxy has chosen you...</div>
+    <div class="choice-btns">
+      <button class="btn-choice btn-truth" onclick="revealChallenge('truth')">🤔 TRUTH</button>
+      <button class="btn-choice btn-dare"  onclick="revealChallenge('dare')">🔥 DARE</button>
+    </div>
+    <div id="challenge-box">
+      <div id="challenge-type"></div>
+      <div id="challenge-text"></div>
+    </div>
+    <button class="btn-again" onclick="resetRound()">↻ SPIN AGAIN</button>
+  </div>
+
+</div>
+
+<script>
+// ── Telegram Web App init ──────────────────────────────────────────────────
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+// ── State ─────────────────────────────────────────────────────────────────
+let players = [];
+let spinning = false;
+let currentTarget = null;
+
+// ── Content ───────────────────────────────────────────────────────────────
+const TRUTHS = [
+  "What's the most embarrassing thing you've ever done?",
+  "Have you ever had a crush on someone in this group?",
+  "What's your biggest fear nobody knows about?",
+  "Have you ever lied to get out of trouble? What happened?",
+  "What's the most childish thing you still secretly do?",
+  "What's one thing you pretend to like but actually hate?",
+  "Who was your first crush and what happened?",
+  "What's the biggest lie you've told this year?",
+  "What's the weirdest dream you've ever had?",
+  "Have you ever ghosted someone? Why?",
+  "What's the most trouble you've ever been in?",
+  "What's a secret you've never told anyone here?",
+  "What's your most embarrassing childhood memory?",
+  "Have you ever cheated on a test or game?",
+  "What's the most impulsive thing you've ever done?",
+];
+
+const DARES = [
+  "Do your best impression of someone in this group.",
+  "Send a voice message singing any song for 10 seconds.",
+  "Tell everyone your most used emoji and why.",
+  "Do 15 push-ups right now.",
+  "Change your profile picture to something ridiculous for 30 minutes.",
+  "Send a 'I miss you' message to a random contact.",
+  "Text your mum/dad a random compliment right now.",
+  "Say the alphabet backwards as fast as you can.",
+  "Describe yourself in 3 emojis — let the group decide if it's accurate.",
+  "Send a voice message with your best villain laugh.",
+  "Post a funny photo with your eyes closed — no peeking!",
+  "Tell everyone your most embarrassing search history item.",
+  "Speak in rhymes for the next 3 minutes.",
+  "Share the last YouTube video you watched.",
+  "Write a haiku about the person who spun last.",
+];
+
+// ── Player Management ─────────────────────────────────────────────────────
+function addPlayer() {
+  const input = document.getElementById('player-input');
+  const name = input.value.trim();
+  if (!name || players.includes(name) || players.length >= 8) return;
+
+  players.push(name);
+  input.value = '';
+  renderPlayers();
+  renderDots();
+  updateSpinBtn();
+}
+
+function removePlayer(name) {
+  players = players.filter(p => p !== name);
+  renderPlayers();
+  renderDots();
+  updateSpinBtn();
+}
+
+function renderPlayers() {
+  const grid = document.getElementById('players-grid');
+  if (players.length === 0) {
+    grid.innerHTML = '<span class="no-players">Add at least 2 players to start</span>';
+    return;
+  }
+  grid.innerHTML = players.map(p => `
+    <div class="player-tag">
+      <span>${p}</span>
+      <button class="remove-btn" onclick="removePlayer('${p}')" title="Remove">×</button>
+    </div>
+  `).join('');
+}
+
+function updateSpinBtn() {
+  document.getElementById('spin-btn').disabled = players.length < 2 || spinning;
+}
+
+// ── Dots Around Circle ─────────────────────────────────────────────────────
+function renderDots() {
+  const arena = document.getElementById('arena');
+  document.querySelectorAll('.player-dot').forEach(d => d.remove());
+
+  if (players.length === 0) return;
+
+  const arenaW = arena.offsetWidth || 280;
+  const r = arenaW / 2 - 24;
+  const cx = arenaW / 2;
+  const cy = arenaW / 2;
+
+  players.forEach((name, i) => {
+    const angle = (i / players.length) * 2 * Math.PI - Math.PI / 2;
+    const x = cx + r * Math.cos(angle) - 18;
+    const y = cy + r * Math.sin(angle) - 18;
+
+    const dot = document.createElement('div');
+    dot.className = 'player-dot';
+    dot.id = `dot-${i}`;
+    dot.style.left = x + 'px';
+    dot.style.top = y + 'px';
+    dot.textContent = name.length > 6 ? name.slice(0, 5) + '…' : name;
+    arena.appendChild(dot);
+  });
+}
+
+// ── Spin Logic ────────────────────────────────────────────────────────────
+function triggerSpin() {
+  if (spinning || players.length < 2) return;
+  spinning = true;
+  document.getElementById('spin-btn').disabled = true;
+  document.getElementById('result-panel').classList.remove('visible');
+  document.getElementById('challenge-box').classList.remove('visible');
+  document.querySelectorAll('.player-dot').forEach(d => d.classList.remove('highlighted'));
+
+  const targetIndex = Math.floor(Math.random() * players.length);
+  currentTarget = players[targetIndex];
+
+  const baseDeg = 1440 + Math.random() * 720;
+  const duration = 2.8 + Math.random() * 0.8;
+
+  const bottle = document.getElementById('bottle-wrap');
+  bottle.style.setProperty('--spin-angle', baseDeg + 'deg');
+  bottle.style.setProperty('--spin-duration', duration + 's');
+  bottle.classList.remove('spinning');
+  void bottle.offsetWidth; // reflow
+  bottle.classList.add('spinning');
+
+  // Highlight dot after spin
+  setTimeout(() => {
+    bottle.classList.remove('spinning');
+    bottle.style.transform = `rotate(${baseDeg % 360}deg)`;
+
+    const dot = document.getElementById(`dot-${targetIndex}`);
+    if (dot) dot.classList.add('highlighted');
+
+    showResult(currentTarget);
+    shootStars();
+    spinning = false;
+    document.getElementById('spin-btn').disabled = false;
+  }, duration * 1000);
+}
+
+function showResult(name) {
+  document.getElementById('result-name').textContent = name;
+  const panel = document.getElementById('result-panel');
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function revealChallenge(type) {
+  const list = type === 'truth' ? TRUTHS : DARES;
+  const text = list[Math.floor(Math.random() * list.length)];
+
+  const typeEl = document.getElementById('challenge-type');
+  typeEl.textContent = type === 'truth' ? '🤔 TRUTH' : '🔥 DARE';
+  typeEl.className = type;
+
+  document.getElementById('challenge-text').textContent = text;
+  document.getElementById('challenge-box').classList.add('visible');
+}
+
+function resetRound() {
+  document.getElementById('result-panel').classList.remove('visible');
+  document.getElementById('challenge-box').classList.remove('visible');
+  document.querySelectorAll('.player-dot').forEach(d => d.classList.remove('highlighted'));
+  document.getElementById('bottle-wrap').style.transform = '';
+  currentTarget = null;
+}
+
+// ── Shooting Stars ─────────────────────────────────────────────────────────
+function shootStars() {
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => {
+      const star = document.createElement('div');
+      star.className = 'shooting-star';
+      star.style.left = Math.random() * 100 + 'vw';
+      star.style.top = Math.random() * 40 + 'vh';
+      star.style.setProperty('--angle', (Math.random() * 60 + 20) + 'deg');
+      document.body.appendChild(star);
+      setTimeout(() => star.remove(), 1100);
+    }, i * 150);
+  }
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => renderDots());
+
+// Pre-load Telegram user as first player
+if (tg?.initDataUnsafe?.user?.first_name) {
+  const tgName = tg.initDataUnsafe.user.first_name;
+  players.push(tgName);
+  renderPlayers();
+  renderDots();
+  updateSpinBtn();
+}
+</script>
+</body>
+</html>
 
